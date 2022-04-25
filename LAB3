@@ -1,0 +1,82 @@
+#LAB-3                                                                                                       #DATE: 25-04-22
+
+1. Create a key space by name Employee
+Q: create keyspace emp with replication={ 'class':'SimpleStrategy','replication_factor':2};
+**************************************************************************************************
+2. Create a column family by name Employee-Info with attributes Emp_Id Primary Key, Emp_Name, Designation, Date_of_Joining, Salary, Dept_Name
+Q: CREATE TABLE EMPLOYEE_INFO(Emp_Id int PRIMARY KEY,Emp_Name text,Designation text,Date_of_joining timestamp,salary int,Dept_name text);
+**************************************************************************************************
+3. Insert the values into the table in batch
+Q: BEGIN BATCH
+       ... insert into EMPLOYEE_INFO(Emp_Id,Emp_Name,Designation,Date_of_joining,salary,Dept_name)values(456,'NAGRAJ','SDE','2020-09-05',95000,'IT');
+       ... insert into EMPLOYEE_INFO(Emp_Id,Emp_Name,Designation,Date_of_joining,salary,Dept_name)values(456,'MAX','Assistent_Manager','2021-05-25',45000,'Sales');
+       ... insert into EMPLOYEE_INFO(Emp_Id,Emp_Name,Designation,Date_of_joining,salary,Dept_name)values(123,'John','Manager','2020-05-25',65000,'Sales');
+       ... APPLY BATCH;
+OUTPUT: 
+ emp_id | date_of_joining                 | dept_name | designation       | emp_name | salary
+--------+---------------------------------+-----------+-------------------+----------+--------
+    123 | 2020-05-24 18:30:00.000000+0000 |     Sales |           Manager |     John |  65000
+    456 | 2021-05-24 18:30:00.000000+0000 |     Sales |               SDE |   NAGRAJ |  95000
+    789 | 2021-05-24 18:30:00.000000+0000 |     Sales | Assistent_Manager |      MAX |  45000
+
+**************************************************************************************************
+4. Update Employee name and Department of Emp-Id 121
+Q: UPDATE EMPLOYEE_INFO SET Emp_Name='MIT',Dept_name='IT' where Emp_Id=123; 
+
+OUTPUT:
+ emp_id | date_of_joining                 | dept_name | designation       | emp_name | salary
+--------+---------------------------------+-----------+-------------------+----------+--------
+    123 | 2020-05-24 18:30:00.000000+0000 |        IT |           Manager |      MIT |  65000
+    456 | 2021-05-24 18:30:00.000000+0000 |     Sales |               SDE |   NAGRAJ |  95000
+    789 | 2021-05-24 18:30:00.000000+0000 |     Sales | Assistent_Manager |      MAX |  45000
+**************************************************************************************************
+5. Sort the details of Employee records based on salary
+Q: 
+ CREATE TABLE EMP(id int, salary int,name text,PRIMARY KEY(id,salary));
+ INSERT INTO EMP(id,salary,name) VALUES (1,100000,'myth');
+ INSERT INTO EMP(id,salary,name) VALUES (1,100000,'myth');
+ INSERT INTO EMP(id,salary,name) values (1,100000,'myth');
+ INSERT INTO EMP(id,salary,name) values (2,200000,'mith');
+ INSERT INTO EMP(id,salary,name) values (3,500000,'nith');
+ PAGING OFF;
+  Disabled Query paging.
+ SELECT * FROM EMP WHERE ID IN (1,2,3,4) ORDER BY SALARY;
+OUTPUT:
+ id | salary | name
+----+--------+------
+  1 | 100000 | myth
+  2 | 200000 | mith
+  3 | 500000 | nith
+
+**************************************************************************************************
+6. Alter the schema of the table Employee_Info to add a column Projects which stores a set of Projects done by the corresponding Employee.
+Q: ALTER TABLE EMPLOYEE_INFO ADD PROJECT SET<TEXT>;
+
+OUTPUT:
+ emp_id | date_of_joining                 | dept_name | designation       | emp_name | project | salary
+--------+---------------------------------+-----------+-------------------+----------+---------+--------
+    123 | 2020-05-24 18:30:00.000000+0000 |        IT |           Manager |      MIT |    null |  65000
+    456 | 2021-05-24 18:30:00.000000+0000 |     Sales |               SDE |   NAGRAJ |    null |  95000
+    789 | 2021-05-24 18:30:00.000000+0000 |     Sales | Assistent_Manager |      MAX |    null |  45000
+
+**************************************************************************************************
+7. Update the altered table to add project names
+Q: UPDATE EMPLOYEE_INFO SET PROJECT=PROJECT+{'FLUTTER_APP'} WHERE EMP_ID=456;
+   UPDATE EMPLOYEE_INFO SET PROJECT=PROJECT+{'BOAT'} WHERE EMP_ID=123;
+   UPDATE EMPLOYEE_INFO SET PROJECT=PROJECT+{'ACCOUNTING'} WHERE EMP_ID=789;
+OUTPUT: 
+ emp_id | date_of_joining                 | dept_name | designation       | emp_name | project                         | salary
+--------+---------------------------------+-----------+-------------------+----------+---------------------------------+--------
+    123 | 2020-05-24 18:30:00.000000+0000 |        IT |           Manager |      MIT |    {'BOAT', 'SALES_ACCOUNTING'} |  65000
+    456 | 2021-05-24 18:30:00.000000+0000 |     Sales |               SDE |   NAGRAJ | {'DATA_SCIENCE', 'FLUTTER_APP'} |  95000
+    789 | 2021-05-24 18:30:00.000000+0000 |     Sales | Assistent_Manager |      MAX |                  {'ACCOUNTING'} |  45000
+**************************************************************************************************
+8 Create a TTL of 15 seconds to display the values of Employees.
+Q: insert into EMPLOYEE_INFO(Emp_Id,Emp_Name,Designation,Date_of_joining,salary,Dept_name)values(001,'SASS','Assistent_SDE','2021-05-25',50000,'IT') USING TTL 15;
+   SELECT TTL(EMP_NAME) FROM EMPLOYEE_INFO WHERE EMP_ID=1;
+OUTPUT:
+ttl(emp_name)
+---------------
+             9
+
+**************************************************************************************************
